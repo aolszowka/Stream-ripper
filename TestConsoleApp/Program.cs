@@ -14,7 +14,7 @@ namespace TestConsoleApp
         {
             var serviceProvider = new ServiceCollection()
                 .AddLogging(cfg => cfg.AddConsole())
-                .Configure<LoggerFilterOptions>(cfg => cfg.MinLevel = LogLevel.Trace)
+                .Configure<LoggerFilterOptions>(cfg => cfg.MinLevel = LogLevel.Error)
                 .AddStreamRipper()
                 .BuildServiceProvider();
 
@@ -22,15 +22,22 @@ namespace TestConsoleApp
 
             var stream = streamRipperFactory.New(new StreamRipperOptions
             {
-                Url = new Uri("http://stream.radiojavan.com/radiojavan"),
-                MaxBufferSize = 10 * 1000000    // stop when buffer size passes 10 megabytes
+                Url = new Uri("https://desertmountainbroadcasting.streamguys1.com/KYYA"),
+                MaxBufferSize = 50 * 1000000    // stop when buffer size passes 50 megabytes
             });
 
             stream.SongChangedEventHandlers += (_, arg) =>
             {
                 Console.WriteLine(arg.SongInfo);
 
-                File.WriteAllBytes($"{arg.SongInfo.SongMetadata}.mp3", arg.SongInfo.Stream.ToArray());
+                string fileName = arg.SongInfo.SongMetadata.ToString();
+
+                foreach(char invalidPathChar in Path.GetInvalidFileNameChars())
+                {
+                    fileName = fileName.Replace(invalidPathChar.ToString(), string.Empty);
+                }
+
+                File.WriteAllBytes($"{fileName}.mp3", arg.SongInfo.Stream.ToArray());
             };
             
             stream.Start();
